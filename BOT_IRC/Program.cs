@@ -1,63 +1,110 @@
-﻿
+﻿using System.Threading;
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace BOT_IRC
 {
     class Program
     {
-        public static List<Bot> l_bots = new List<Bot>();
+        public static Bot bot = null;
+        
+        private static string servidor = "chat.freenode.net";
+        private static string nombreBot = "ClapTrakaLaKa";
+        private static string nCanal = "#locos";
 
         private static void Main(string[] args)
         {
-            CreateBot();
+            //MainAsync().GetAwaiter().GetResult();
+            MainAsync();
 
-            foreach (Bot bot in l_bots)
+        }
+
+        static void MainAsync()
+        {
+            bot = CreateBot();
+
+            if (bot != null)
             {
                 bot.WorkingBot();
             }
         }
 
-        public static bool CreateBot()
+        public static Bot CreateBot()
         {
             try
             {
                 Restart:
                 Console.Clear();
-                Console.WriteLine("How many robots do you want to create?");
-                string strResponse = Console.ReadLine();
+                Console.WriteLine("A Que servidor desea conectar el BOT?");
+                string strServidor = Console.ReadLine();
 
-                int intResult = 0;
-                if (int.TryParse(strResponse, out intResult))
+                if(strServidor.ToUpper().Equals("GO"))
                 {
-                    Console.WriteLine("¡Buenops! :D");
-                    //for (int i = 0; i < intResult; i++)
-                    //{
-                        l_bots.Add(new Bot("chat.freenode.net", ("ClapTrakaLaKa" + l_bots.Count), "#locos"));
-                        l_bots.Add(new Bot("irc.arstechnica.com", ("ClapTrakaLaKa" + l_bots.Count), "#locos"));
-                        Console.WriteLine("Bot N° " + l_bots[0].nickname + " Creado con exito! :D");
-                        Console.WriteLine("Bot N° " + l_bots[1].nickname + " Creado con exito! :D");
-                    //}
+                    goto finalizar;
                 }
-                else
+
+                servidor = strServidor;
+
+                //if Invalid
+                if(string.IsNullOrWhiteSpace(servidor))
                 {
-                    Console.WriteLine(":P You must input a number, JUST NUMBERS!!!");
-                    Console.WriteLine("Press any key to continue");
+                    Console.WriteLine("Nombre Inválido, intente nuevamente");
+                    Console.WriteLine("Presione cualquier tecla para continuar");
                     Console.ReadLine();
                     goto Restart;
                 }
-                return true;
+
+                nombreBot:
+                Console.Clear();
+                Console.WriteLine("Perfecto, entonces se connectará al servidor: "+servidor);
+                Console.WriteLine("Como desea que se llame el Bot?");
+                nombreBot = Console.ReadLine();
+
+                //if Invalid
+                if (string.IsNullOrWhiteSpace(nombreBot))
+                {
+                    Console.WriteLine("Nombre Inválido, intente nuevamente");
+                    Console.WriteLine("Presione cualquier tecla para continuar");
+                    Console.ReadLine();
+                    goto nombreBot;
+                }
+
+                nCanalRtr:
+                Console.Clear();
+                Console.WriteLine("Perfecto, entonces se connectará al servidor: " + servidor);
+                Console.WriteLine("y se llamará: " + nombreBot);
+                Console.WriteLine("A que canal desea que se Connecte el Bot?");
+                nCanal = Console.ReadLine();
+
+                //if Invalid
+                if (string.IsNullOrWhiteSpace(nCanal))
+                {
+                    Console.WriteLine("Nombre Inválido, intente nuevamente");
+                    Console.WriteLine("Presione cualquier tecla para continuar");
+                    Console.ReadLine();
+                    goto nCanalRtr;
+                }
+
+                Console.Clear();
+                Console.WriteLine("¡Buenops! :D");
+                Console.WriteLine("Connectando al servidor: " + servidor);
+                Console.WriteLine("Con el nombre: " + nombreBot);
+                Console.WriteLine("Al Canal: " + nCanal);
+
+                finalizar:
+                //Bot("chat.freenode.net", "ClapTrakaLaKa", "#locos");
+                return new Bot(servidor, nombreBot, nCanal);
+                
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.Write(ex.ToString());
-                return false;
+                return null;
             }
-             
-        }
 
+        }
+        
     }
+
 }
 
 // The End ?

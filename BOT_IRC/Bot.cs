@@ -2,7 +2,6 @@
 using System.IO; // Lo usamos para el manejo con los streams
 using System.Text.RegularExpressions; // No es vital pero me encantan el uso de las expresiones regulares
 using System;
-using System.Threading.Tasks;
 
 namespace BOT_IRC
 {
@@ -20,7 +19,9 @@ namespace BOT_IRC
         string host = "chat.freenode.net"; // Establecemos la variable string host para tener el host del canal IRC
         public string nickname = "ClapTrakaLaKa"; // Establecemos la variable nickname con el nick del bot
         public string canal = "#locos"; // Establecemos la variable canal con el nombre del canal
-
+        private string dedonde;
+        private string usuarioCanal;
+        private string mensaje;
 
         public Bot(string host, string nickname, string canal)
         {
@@ -81,28 +82,117 @@ namespace BOT_IRC
                     regex = Regex.Match(code, ":(.*)!(.*) PRIVMSG (.*) :(.*)", RegexOptions.IgnoreCase); // Lo usamos para detectar los mensajes privados y publicos
                     if (regex.Success) // Si se encontro algo
                     {
+                        //this.mandar_datos.WriteLine("PRIVMSG" + " " + this.canal + " " + ":Hi World"); // Mandamos un mensaje al canal 
+                        //this.mandar_datos.Flush(); // ..
 
-                        this.mandar_datos.WriteLine("PRIVMSG" + " " + this.canal + " " + ":Hi World"); // Mandamos un mensaje al canal 
-                        this.mandar_datos.Flush(); // ..
+                        dedonde = regex.Groups[3].Value; // Se detecta la procedencia del mensaje
+                        usuarioCanal = regex.Groups[1].Value; // Quien manda el mensaje
+                        mensaje = regex.Groups[4].Value; // El mensaje en sí
 
-                        string dedonde = regex.Groups[1].Value; // Se detecta la procedencia del mensaje
-                        string mensaje = regex.Groups[4].Value; // El mensaje en si
-                        if (dedonde != this.canal) // Si la procedencia del mensaje no es el canal en si activamos esta condicion , cabe aclarar que si es el canal
+                        #region En otros servers se detecta así
+                        /*string dedonde = regex.Groups[1].Value; // Se detecta la procedencia del mensaje
+                        string mensaje = regex.Groups[4].Value; // El mensaje en si*/
+                        #endregion
+
+                        if (dedonde == this.canal) // Si la procedencia del mensaje no es el canal en si activamos esta condicion , cabe aclarar que si es el canal
                                                    // el que nos mando el mensaje es un mensaje PUBLICO , caso contrario es PRIVADO
+                          
                         {
                             Console.WriteLine("[+] " + dedonde + " dice : " + mensaje); // Mostramos el dueño del mensaje y el mensaje
                             Match regex_ordenes = Regex.Match(mensaje, "!spam (.*) (.*)", RegexOptions.IgnoreCase); // Esta es la orden !spam con los (.*)
                                                                                                                     // detectamos los dos comandos que son <nick> <mensaje>
+
+                            regex_ordenes = Regex.Match(mensaje, "!(.*)d(.*)", RegexOptions.IgnoreCase); // Esta es la orden !spam con los (.*)
+                            if (regex_ordenes.Success) // Si se encontro algo
+                            {
+                                DadosDeRol(regex_ordenes, dedonde);
+                                continue;
+                            }
+
                             if (regex_ordenes.Success) // Si se encontro algo
                             {
                                 this.mandar_datos.WriteLine("PRIVMSG" + " " + regex_ordenes.Groups[1].Value + " " + regex_ordenes.Groups[2].Value); // Mandamos
                                                                                                                                                     // un mensaje al usuario especificado con el mensaje que pedimos
                                 this.mandar_datos.Flush(); // ..
+                                continue;
+                            }
+                        }
+
+                        if(dedonde == this.nickname)
+                        {
+                            Console.WriteLine("[+] " + dedonde + " dice : " + mensaje); // Mostramos el dueño del mensaje y el mensaje
+                            Match regex_ordenes = Regex.Match(mensaje, "!spam (.*) (.*)", RegexOptions.IgnoreCase); // Esta es la orden !spam con los (.*)
+                                                                                                                    // detectamos los dos comandos que son <nick> <mensaje>
+
+                            regex_ordenes = Regex.Match(mensaje, "!(.*)d(.*)", RegexOptions.IgnoreCase); // Esta es la orden !spam con los (.*)
+                            if (regex_ordenes.Success) // Si se encontro algo
+                            {
+                                DadosDeRol(regex_ordenes, usuarioCanal);
+                                continue;
+                            }
+
+                            if (regex_ordenes.Success) // Si se encontro algo
+                            {
+                                this.mandar_datos.WriteLine("PRIVMSG" + " " + regex_ordenes.Groups[1].Value + " " + regex_ordenes.Groups[2].Value); // Mandamos
+                                                                                                                                                    // un mensaje al usuario especificado con el mensaje que pedimos
+                                this.mandar_datos.Flush(); // ..
+                                continue;
                             }
                         }
                     }
                 } //END While Interior
             } //END While Eterno
+        }
+
+        public void DadosDeRol(Match regex_ordenes, string donde = null)
+        {
+            int a = 0, b = 0, result = 0, c = 0;
+            if (int.TryParse(regex_ordenes.Groups[1].Value, out a) && int.TryParse(regex_ordenes.Groups[2].Value, out b))
+            {
+                if (a > 0 && b > 0)
+                {
+                    Random rand = new Random();
+                    if (string.IsNullOrWhiteSpace(donde))
+                    {
+                        donde = this.canal;
+                    }
+
+                    string quien = !string.IsNullOrWhiteSpace(usuarioCanal) ? " "+usuarioCanal+" " : " ";
+
+                    string strSingularPlural = string.Empty;
+                    if (a == 1)
+                    {
+                        result = rand.Next(a, b);
+                        this.mandar_datos.WriteLine("PRIVMSG" + " " + donde + " " + ":El usuario"+ quien + "ha tirado " + a + " dado de " + b + " caras, el resultado fue: " + result); // Mandamos
+                    }
+                    else
+                    {
+                        this.mandar_datos.WriteLine("PRIVMSG" + " " + donde + " " + ":Has tirado " + a + " dados de " + b + " caras, los resultados son:"); // Mandamos
+                        this.mandar_datos.Flush();
+
+                        for (int i = 0; i < a; i++)
+                        {
+                            c = rand.Next(1, b);
+                            this.mandar_datos.WriteLine("PRIVMSG" + " " + donde + " " + ":En el " + (i + 1) + "° lanzamiento sacaste: " + c);
+                            result += c;
+                            this.mandar_datos.Flush();
+                        }
+
+                        this.mandar_datos.WriteLine("PRIVMSG" + " " + donde + " " + ":Todas las tiradas anteriores contabilizan un total de: " + result + "!!!");
+                    }
+                }
+                else
+                {
+                    this.mandar_datos.WriteLine("PRIVMSG" + " " + donde + " " + ":Debes tirar al menos un dado para obtener un resultado! (Sintaxis de ejemplo: 1d4 = 1 dado de 4 caras)"); // Mandamos
+                }
+
+            }
+            else
+            {
+                this.mandar_datos.WriteLine("PRIVMSG" + " " + donde + " " + ":Debes insertar valores numericos validos y exactos para obtener un resultado! (Sintaxis de ejemplo: 1d4 = 1 dado de 4 caras)"); // Mandamos
+            }
+            // un mensaje al usuario especificado con el mensaje que pedimos
+            this.mandar_datos.Flush(); // ..
         }
 
 
